@@ -295,6 +295,45 @@ fn extract_ipv6_addresses(table: &toml::map::Map<String, Value>, key: &str, erro
 }
 
 // Helper function to extract a u64 from a toml::Value::Table
+/// Extracts a `u64` value from a `toml::Value::Table` for a given key.
+///
+/// This helper function attempts to extract a `u64` value associated with the 
+/// specified `key` from a `toml::map::Map` (representing a TOML table). It 
+/// handles cases where the key is missing, the value is not an integer, or 
+/// the integer value is outside the valid range for a `u64`.
+///
+/// # Parameters
+///
+/// - `table`: A reference to the `toml::map::Map` (TOML table) from which to extract the value.
+/// - `key`: The key (as a string slice) associated with the value to extract.
+/// - `errors`: A mutable reference to a vector of `ThisProjectError` to collect any errors encountered during extraction.
+///
+/// # Error Handling
+///
+/// The function uses a `Result` type to handle potential errors. It returns:
+///
+/// - `Ok(u64)`: If the key is found and the value can be successfully parsed as a `u64`.
+/// - `Err(ThisProjectError)`: If:
+///     - The key is missing from the table.
+///     - The value associated with the key is not a `toml::Value::Integer`.
+///     - The integer value is negative or exceeds the maximum value of a `u64`.
+///
+/// In case of errors, a descriptive error message is added to the `errors` vector.
+///
+/// # Example
+///
+/// ```rust
+/// use toml::Value;
+///
+/// let mut errors = Vec::new();
+/// let mut table = toml::map::Map::new();
+/// table.insert("my_key".to_string(), Value::Integer(12345));
+///
+/// let my_value = extract_u64(&table, "my_key", &mut errors);
+///
+/// assert_eq!(my_value.unwrap(), 12345);
+/// assert!(errors.is_empty()); // No errors
+/// ```
 fn extract_u64(table: &toml::map::Map<String, Value>, key: &str, errors: &mut Vec<ThisProjectError>) -> Result<u64, ThisProjectError> {
     if let Some(Value::Integer(i)) = table.get(key) {
         // Correct comparison for u64 values:
