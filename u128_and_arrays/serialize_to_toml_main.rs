@@ -180,11 +180,6 @@ fn write_toml_to_file(file_path: &str, toml_string: &str) -> Result<(), ThisProj
     // Everything successful!
     Ok(()) 
 }
-// fn write_toml_to_file(file_path: &str, toml_string: &str) -> IoResult<()> {
-//     let mut file = File::create(file_path)?;
-//     file.write_all(toml_string.as_bytes())?;
-//     Ok(())
-// }
 
 fn main() {
     // Example CollaboratorTomlData instance
