@@ -101,6 +101,21 @@ impl fmt::Display for ThisProjectError {
 /// - `Ok`: The TOML-formatted string representation of the `CollaboratorTomlData`.
 /// - `Err`: A `ThisProjectError` if an error occurs during serialization (although 
 ///           errors are unlikely in this simplified implementation). 
+/// 
+/// # use with
+/// // Serialize the collaborator data to a TOML string
+/// match serialize_collaborator_to_toml(&collaborator) {
+///     Ok(toml_string) => {
+///         println!("Serialized TOML:\n{}", toml_string);
+///
+///         // Write the TOML string to a file (example file path)
+///         match write_toml_to_file("collaborator_data.toml", &toml_string) {
+///             Ok(_) => println!("TOML data written to file successfully."),
+///             Err(e) => println!("Error writing to file: {}", e),
+///         }
+///     }
+///     Err(e) => println!("Error serializing to TOML: {}", e),
+/// }
 fn serialize_collaborator_to_toml(collaborator: &CollaboratorTomlData) -> Result<String, ThisProjectError> {
     let mut toml_string = String::new();
 
