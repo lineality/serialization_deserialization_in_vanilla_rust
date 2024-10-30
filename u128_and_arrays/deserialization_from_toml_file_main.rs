@@ -19,7 +19,7 @@ struct CollaboratorTomlData {
 #[derive(Debug)]
 enum ThisProjectError {
     IoError(std::io::Error),
-    TomlError(String),
+    TomlStringError(String),
     ParseIntError(std::num::ParseIntError),
 }
 
@@ -39,7 +39,7 @@ impl fmt::Display for ThisProjectError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ThisProjectError::IoError(err) => write!(f, "IO Error: {}", err),
-            ThisProjectError::TomlError(err) => write!(f, "TOML Error: {}", err),
+            ThisProjectError::TomlStringError(err) => write!(f, "TOML Error: {}", err),
             ThisProjectError::ParseIntError(err) => write!(f, "Parse Int Error: {}", err),
         }
     }
@@ -120,6 +120,26 @@ impl fmt::Display for ThisProjectError {
 /// 
 /// This was developed for the UMA project, as the naming reflects:
 /// https://github.com/lineality/uma_productivity_collaboration_tool
+/// 
+/// # Use with
+/// match read_a_collaborator_setup_toml() {
+/// Ok((collaborators, errors)) => {
+///     if !errors.is_empty() {
+///         println!("Errors encountered:");
+///         for err in errors {
+///             println!("{}", err); 
+///         }
+///     }
+///
+///     println!("Collaborators:");
+///     for collaborator in collaborators {
+///         println!("{:?}", collaborator); 
+///     }
+/// }
+/// Err(e) => {
+///     println!("Error reading TOML files: {}", e); 
+/// }
+/// }
 fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<ThisProjectError>), ThisProjectError> {
     let mut collaborators = Vec::new();
     let mut errors = Vec::new();
@@ -139,7 +159,7 @@ fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<Th
                         let user_name = if let Some(Value::String(s)) = table.get("user_name") {
                             s.clone()
                         } else {
-                            errors.push(ThisProjectError::TomlError("Missing user_name".into()));
+                            errors.push(ThisProjectError::TomlStringError("Missing user_name".into()));
                             continue;
                         };
 
@@ -151,12 +171,12 @@ fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<Th
                                         u128::from_str_radix(s.trim_start_matches("0x"), 16)
                                             .map_err(|e| ThisProjectError::ParseIntError(e))
                                     } else {
-                                        Err(ThisProjectError::TomlError("Invalid salt format: Expected string".into()))
+                                        Err(ThisProjectError::TomlStringError("Invalid salt format: Expected string".into()))
                                     }
                                 })
                                 .collect::<Result<Vec<u128>, ThisProjectError>>()?
                         } else {
-                            errors.push(ThisProjectError::TomlError("Missing user_salt_list".into()));
+                            errors.push(ThisProjectError::TomlStringError("Missing user_salt_list".into()));
                             continue;
                         };
 
@@ -170,7 +190,7 @@ fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<Th
                         let gpg_key_public = if let Some(Value::String(s)) = table.get("gpg_key_public") {
                             s.clone()
                         } else {
-                            errors.push(ThisProjectError::TomlError("Missing or invalid gpg_key_public".into()));
+                            errors.push(ThisProjectError::TomlStringError("Missing or invalid gpg_key_public".into()));
                             continue;
                         };
 
@@ -191,11 +211,11 @@ fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<Th
                             updated_at_timestamp,
                         });
                     } else {
-                        errors.push(ThisProjectError::TomlError("Invalid TOML structure".into()));
+                        errors.push(ThisProjectError::TomlStringError("Invalid TOML structure".into()));
                     }
                 }
                 Err(e) => {
-                    errors.push(ThisProjectError::TomlError(e.to_string()));
+                    errors.push(ThisProjectError::TomlStringError(e.to_string()));
                 }
             }
         }
@@ -211,9 +231,9 @@ fn read_a_collaborator_setup_toml() -> Result<(Vec<CollaboratorTomlData>, Vec<Th
 //             .map(|val| {
 //                 if let Value::String(s) = val {
 //                     s.parse::<Ipv4Addr>()
-//                         .map_err(|e| ThisProjectError::TomlError(format!("Invalid {} format: {}", key, e)))
+//                         .map_err(|e| ThisProjectError::TomlStringError(format!("Invalid {} format: {}", key, e)))
 //                 } else {
-//                     Err(ThisProjectError::TomlError(format!("Invalid {} format: Expected string", key)))
+//                     Err(ThisProjectError::TomlStringError(format!("Invalid {} format: Expected string", key)))
 //                 }
 //             })
 //             .collect::<Result<Vec<Ipv4Addr>, ThisProjectError>>()?;
@@ -234,10 +254,10 @@ fn extract_ipv4_addresses(
             if let Value::String(s) = val {
                 match s.parse::<Ipv4Addr>() {
                     Ok(ip) => addresses.push(ip), // Push successful IP address
-                    Err(e) => errors.push(ThisProjectError::TomlError(format!("Invalid {} format: {}. Skipping this address.", key, e))),
+                    Err(e) => errors.push(ThisProjectError::TomlStringError(format!("Invalid {} format: {}. Skipping this address.", key, e))),
                 }
             } else {
-                errors.push(ThisProjectError::TomlError(format!("Invalid {} format: Expected string. Skipping this address.", key)));
+                errors.push(ThisProjectError::TomlStringError(format!("Invalid {} format: Expected string. Skipping this address.", key)));
             }
         }
 
@@ -258,9 +278,9 @@ fn extract_ipv4_addresses(
 //             .map(|val| {
 //                 if let Value::String(s) = val {
 //                     s.parse::<Ipv6Addr>()
-//                         .map_err(|e| ThisProjectError::TomlError(format!("Invalid {} format: {}", key, e)))
+//                         .map_err(|e| ThisProjectError::TomlStringError(format!("Invalid {} format: {}", key, e)))
 //                 } else {
-//                     Err(ThisProjectError::TomlError(format!("Invalid {} format: Expected string", key)))
+//                     Err(ThisProjectError::TomlStringError(format!("Invalid {} format: Expected string", key)))
 //                 }
 //             })
 //             .collect::<Result<Vec<Ipv6Addr>, ThisProjectError>>()?;
@@ -277,10 +297,10 @@ fn extract_ipv6_addresses(table: &toml::map::Map<String, Value>, key: &str, erro
             if let Value::String(s) = val {
                 match s.parse::<Ipv6Addr>() {
                     Ok(ip) => addresses.push(ip), // Push successful IP address
-                    Err(e) => errors.push(ThisProjectError::TomlError(format!("Invalid {} format: {}. Skipping this address.", key, e))),
+                    Err(e) => errors.push(ThisProjectError::TomlStringError(format!("Invalid {} format: {}. Skipping this address.", key, e))),
                 }
             } else {
-                errors.push(ThisProjectError::TomlError(format!("Invalid {} format: Expected string. Skipping this address.", key)));
+                errors.push(ThisProjectError::TomlStringError(format!("Invalid {} format: Expected string. Skipping this address.", key)));
             }
         }
 
@@ -340,12 +360,12 @@ fn extract_u64(table: &toml::map::Map<String, Value>, key: &str, errors: &mut Ve
         if *i >= 0 && *i <= i64::MAX { // Compare against i64::MAX 
             Ok(*i as u64) // Safe to cast since it's within i64::MAX
         } else {
-            errors.push(ThisProjectError::TomlError(format!("Invalid {}: Out of range for u64", key)));
-            Err(ThisProjectError::TomlError(format!("Invalid {}: Out of range for u64", key)))
+            errors.push(ThisProjectError::TomlStringError(format!("Invalid {}: Out of range for u64", key)));
+            Err(ThisProjectError::TomlStringError(format!("Invalid {}: Out of range for u64", key)))
         }
     } else {
-        errors.push(ThisProjectError::TomlError(format!("Missing or invalid {}", key)));
-        Err(ThisProjectError::TomlError(format!("Missing or invalid {}", key)))
+        errors.push(ThisProjectError::TomlStringError(format!("Missing or invalid {}", key)));
+        Err(ThisProjectError::TomlStringError(format!("Missing or invalid {}", key)))
     }
 }
 
