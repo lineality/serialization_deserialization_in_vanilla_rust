@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fs::File;
-use std::io::{Write, Result as IoResult};
+use std::io::Write;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 
@@ -16,30 +16,30 @@ struct CollaboratorTomlData {
 }
 
 #[derive(Debug)]
-enum UmaError {
+enum ThisProjectError {
     IoError(std::io::Error),
     TomlError(String),
     ParseIntError(std::num::ParseIntError),
 }
 
-impl From<std::io::Error> for UmaError {
+impl From<std::io::Error> for ThisProjectError {
     fn from(err: std::io::Error) -> Self {
-        UmaError::IoError(err)
+        ThisProjectError::IoError(err)
     }
 }
 
-impl From<std::num::ParseIntError> for UmaError {
+impl From<std::num::ParseIntError> for ThisProjectError {
     fn from(err: std::num::ParseIntError) -> Self {
-        UmaError::ParseIntError(err)
+        ThisProjectError::ParseIntError(err)
     }
 }
 
-impl fmt::Display for UmaError {
+impl fmt::Display for ThisProjectError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            UmaError::IoError(err) => write!(f, "IO Error: {}", err),
-            UmaError::TomlError(err) => write!(f, "TOML Error: {}", err),
-            UmaError::ParseIntError(err) => write!(f, "Parse Int Error: {}", err),
+            ThisProjectError::IoError(err) => write!(f, "IO Error: {}", err),
+            ThisProjectError::TomlError(err) => write!(f, "TOML Error: {}", err),
+            ThisProjectError::ParseIntError(err) => write!(f, "Parse Int Error: {}", err),
         }
     }
 }
@@ -99,9 +99,9 @@ impl fmt::Display for UmaError {
 ///
 /// Returns a `Result` containing:
 /// - `Ok`: The TOML-formatted string representation of the `CollaboratorTomlData`.
-/// - `Err`: A `UmaError` if an error occurs during serialization (although 
+/// - `Err`: A `ThisProjectError` if an error occurs during serialization (although 
 ///           errors are unlikely in this simplified implementation). 
-fn serialize_collaborator_to_toml(collaborator: &CollaboratorTomlData) -> Result<String, UmaError> {
+fn serialize_collaborator_to_toml(collaborator: &CollaboratorTomlData) -> Result<String, ThisProjectError> {
     let mut toml_string = String::new();
 
     // Add user_name
@@ -137,7 +137,7 @@ fn serialize_ip_addresses<T: std::fmt::Display>(
     toml_string: &mut String, 
     key: &str, 
     addresses: &Option<Vec<T>>
-) -> Result<(), UmaError> {
+) -> Result<(), ThisProjectError> {
     if let Some(addr_vec) = addresses {
         toml_string.push_str(&format!("{} = [\n", key));
         for addr in addr_vec {
@@ -149,11 +149,27 @@ fn serialize_ip_addresses<T: std::fmt::Display>(
 }
 
 // Function to write a TOML string to a file
-fn write_toml_to_file(file_path: &str, toml_string: &str) -> IoResult<()> {
-    let mut file = File::create(file_path)?;
-    file.write_all(toml_string.as_bytes())?;
-    Ok(())
+// Function to write a TOML string to a file
+fn write_toml_to_file(file_path: &str, toml_string: &str) -> Result<(), ThisProjectError> {
+    // Attempt to create the file. 
+    let mut file = match File::create(file_path) {
+        Ok(file) => file,
+        Err(e) => return Err(ThisProjectError::IoError(e)), 
+    };
+
+    // Attempt to write to the file.
+    if let Err(e) = file.write_all(toml_string.as_bytes()) {
+        return Err(ThisProjectError::IoError(e));
+    }
+
+    // Everything successful!
+    Ok(()) 
 }
+// fn write_toml_to_file(file_path: &str, toml_string: &str) -> IoResult<()> {
+//     let mut file = File::create(file_path)?;
+//     file.write_all(toml_string.as_bytes())?;
+//     Ok(())
+// }
 
 fn main() {
     // Example CollaboratorTomlData instance
