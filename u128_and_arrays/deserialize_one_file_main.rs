@@ -94,11 +94,37 @@ impl fmt::Display for ThisProjectError {
 /// - `extract_ipv6_addresses`: Parses a string array into `Option<Vec<Ipv6Addr>>`.
 /// - `extract_u64`: Parses a TOML integer into a `u64` value, handling potential errors.
 ///
+/// Reads collaborator setup data from a TOML file for a specific user.
+///
+/// This function reads and parses a TOML file located at 
+/// `project_graph_data/collaborator_files_address_book/{collaborator_name}__collaborator.toml`.
+/// The file is expected to contain data for a single collaborator in a structure that 
+/// can be mapped to the `CollaboratorTomlData` struct.
+///
 /// # Error Handling
 ///
-/// The function returns a `Result` type to handle potential errors during file 
-/// reading, TOML parsing, and data extraction. The `ThisProjectError` enum is used to 
-/// represent different error types.
+/// This function uses a centralized error handling approach. If any error occurs during:
+///
+/// - File reading (e.g., file not found)
+/// - TOML parsing (e.g., invalid TOML syntax)
+/// - Data extraction (e.g., missing required fields, invalid data formats)
+///
+/// The function will immediately return an `Err` containing a `ThisProjectError` that describes the error.
+/// 
+/// This approach simplifies error propagation and allows for early exit on error. 
+/// If any part of the parsing or data extraction process fails, the function will stop 
+/// and return the error without attempting to process the rest of the file.
+///
+/// # Example
+///
+/// ```
+/// let collaborator_data = read_one_collaborator_setup_toml("alice");
+///
+/// match collaborator_data {
+///     Ok(data) => { /* ... process the collaborator data */ },
+///     Err(e) => { /* ... handle the error */ },
+/// }
+/// ```
 ///
 /// # Example TOML File
 ///
